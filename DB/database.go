@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
@@ -11,18 +10,19 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-func ConnectDb() {
-	err := godotenv.Load()
+// ConnectDB loads the MongoDB URL, verifies the connection, and returns the
+// collection used by the task API. The client is returned so main can close it
+// when the process shuts down.
+func ConnectDB() (*mongo.Client, *mongo.Collection, error) {
+	// Loading .env is convenient locally; deployed environments can provide the
+	// same setting directly without needing a .env file.
+	_ = godotenv.Load()
 
-	if err != nil {
-		log.Fatal("error loading environment: ", err)
-	}
-	mongoDbUrl := os.Getenv("MONGODB_URL")
+	mongoDBURL := os.Getenv("MONGODB_URL")
 
-	if mongoDbUrl == "" {
-		log.Fatal("MONGODB_URL is not set")
+	if mongoDBURL == "" {
+		return nil, nil, os.ErrNotExist
 	}
-	log.Println("Connecting to MongoDB...")
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
@@ -31,21 +31,19 @@ func ConnectDb() {
 	defer cancel()
 
 	client, err := mongo.Connect(
-		options.Client().ApplyURI(mongoDbUrl),
+		options.Client().ApplyURI(mongoDBURL),
 	)
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
 
 	err = client.Ping(ctx, nil)
 
 	if err != nil {
-		log.Fatal(err)
+		_ = client.Disconnect(context.Background())
+		return nil, nil, err
 	}
-	log.Println("DB connected")
 
-	database := client.Database("task_api")
-	tasksCollection := database.Collection("tasks")
-
+	return client, client.Database("task_api").Collection("tasks"), nil
 }
