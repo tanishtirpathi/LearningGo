@@ -45,4 +45,7 @@ func ConnectDb() {
 	}
 	log.Println("DB connected")
 
+	database := client.Database("task_api")
+	tasksCollection := database.Collection("tasks")
+
 }
