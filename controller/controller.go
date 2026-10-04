@@ -63,3 +63,28 @@ func GetTasks(collection *mongo.Collection) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(tasks)
 	}
 }
+
+func DeleteTask(collection *mongo.Collection) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var task Task
+
+		err := json.NewDecoder(r.Body).Decode(&task)
+
+		if err != nil {
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+
+		result, err := collection.DeleteOne(r.Context(), bson.M{"_id": task.ID})
+		if err != nil {
+			http.Error(w, "Failed to delete task", http.StatusInternalServerError)
+			return
+		}
+		if result.DeletedCount == 0 {
+			http.Error(w, "Task not found", http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}

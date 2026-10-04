@@ -13,6 +13,7 @@ func NewRouter(collection *mongo.Collection) http.Handler {
 	mux := http.NewServeMux()
 	createTask := controller.CreateTask(collection)
 	getTasks := controller.GetTasks(collection)
+	deleteTask := controller.DeleteTask(collection)
 
 	mux.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
@@ -20,6 +21,8 @@ func NewRouter(collection *mongo.Collection) http.Handler {
 			createTask(w, r)
 		case http.MethodGet:
 			getTasks(w, r)
+		case http.MethodDelete:
+			deleteTask(w, r)
 		default:
 			w.Header().Set("Allow", http.MethodGet+", "+http.MethodPost)
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
