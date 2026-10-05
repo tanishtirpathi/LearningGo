@@ -26,7 +26,7 @@ func (rl *RateLimiter) Allow() bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	if time.Since(rl.windowStart) >= 10*time.Second {
+	if time.Since(rl.windowStart) >= 20*time.Second {
 		rl.requests = 0
 		rl.windowStart = time.Now()
 	}
@@ -40,7 +40,7 @@ func (rl *RateLimiter) Allow() bool {
 	return true
 }
 
-var limiter = NewRateLimiter(10, 10*time.Second)
+var limiter = NewRateLimiter(2, 20*time.Second)
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	if !limiter.Allow() {
